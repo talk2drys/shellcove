@@ -8,12 +8,12 @@ using WebSockets. The service then forwards the requests to an SSH server using 
 
 ## Road Map
 
-- [] Record Terminal Session
-- [] Resumable Sessions
-- [] Acts as a bridge between WebSocket connections and SSH protocol.
-- [] Supports secure and encrypted communication.
-- [] Lightweight and designed for high performance.
-- [] Easy to deploy and integrate with existing systems.
+- [ ] Record Terminal Session
+- [ ] Resumable Sessions
+- [ ] Acts as a bridge between WebSocket connections and SSH protocol.
+- [ ] Supports secure and encrypted communication.
+- [ ] Lightweight and designed for high performance.
+- [ ] Easy to deploy and integrate with existing systems.
 
 ## Installation
 
