@@ -165,7 +165,7 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                     ))
                 }
             }
-            SSHMessage::Command(cmd) => {
+            SSHMessage::ShellInput(cmd) => {
                 if let Some(channel) = self.channel.as_ref() {
                     let cloned_channel = channel.clone();
                     let fut = async move {
@@ -186,7 +186,7 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                     ))
                 }
             }
-            SSHMessage::Data(data) => {
+            SSHMessage::ShellOutput(data) => {
                 if let Some(channel) = self.channel.as_ref() {
                     let cloned_channel = channel.clone();
                     let fut = async move {
