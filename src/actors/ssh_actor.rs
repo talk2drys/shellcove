@@ -240,7 +240,8 @@ impl client::Handler for SSHClient {
         //     channel,
         //     std::str::from_utf8(data)
         // );
-        self.actor_addr.do_send(SSHMessage::Data(data.to_owned()));
+        self.actor_addr
+            .do_send(SSHMessage::ShellOutput(data.to_owned()));
         Ok((self, session))
     }
 }
