@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpSocket;
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 #[derive(Debug)]
 pub struct SSHActor {
@@ -46,6 +46,11 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
 
                 let fut = async move {
                     let mut session = if let Some(proxy) = jump_host {
+                        info!(
+                            host = proxy.host,
+                            port = proxy.port,
+                            "connecting to jump host"
+                        );
                         let proxy_client_handler = SSHProxyClient;
                         let mut session = russh::client::connect(
                             config.clone(),
@@ -54,6 +59,8 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                         )
                         .await
                         .unwrap();
+
+                        info!("estasblish connection with jump host");
 
                         // authenticate into the proxy server
                         let is_authenticated = session
@@ -85,14 +92,14 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                         Err(err) => return Err(SCError::SSHError(err)),
                         Ok(isAuthnenticated) => {
                             if !isAuthnenticated {
-                                println!("Permission Denied");
+                                error!("Permission Denied");
                                 return Err(SCError::PermissionDenied);
                             }
 
                             let mut channel = match session.channel_open_session().await {
                                 Ok(val) => val,
                                 Err(err) => {
-                                    println!("Error opening channel: {:?}", err);
+                                    error!("Error opening channel: {:?}", err);
                                     return Err(SCError::SSHError(err));
                                 }
                             };
@@ -115,10 +122,11 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                                 .await
                                 .unwrap();
                             channel.request_shell(true).await.unwrap();
+                            info!("setting environment variable TERM to xterm");
                             channel.set_env(true, "TERM", "xterm").await.unwrap();
 
                             if let Some(msg) = channel.wait().await {
-                                println!("{:?}", msg)
+                                info!("{:?}", msg)
                             }
                             Ok(channel)
                         }
@@ -165,7 +173,7 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                     ))
                 }
             }
-            SSHMessage::Command(cmd) => {
+            SSHMessage::ShellInput(cmd) => {
                 if let Some(channel) = self.channel.as_ref() {
                     let cloned_channel = channel.clone();
                     let fut = async move {
@@ -186,7 +194,7 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                     ))
                 }
             }
-            SSHMessage::Data(data) => {
+            SSHMessage::ShellOutput(data) => {
                 if let Some(channel) = self.channel.as_ref() {
                     let cloned_channel = channel.clone();
                     let fut = async move {
@@ -240,7 +248,8 @@ impl client::Handler for SSHClient {
         //     channel,
         //     std::str::from_utf8(data)
         // );
-        self.actor_addr.do_send(SSHMessage::Data(data.to_owned()));
+        self.actor_addr
+            .do_send(SSHMessage::ShellOutput(data.to_owned()));
         Ok((self, session))
     }
 }
