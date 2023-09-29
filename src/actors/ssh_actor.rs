@@ -1,9 +1,11 @@
 use super::ws_actor::WSActor;
+use crate::constants::KEX;
 use crate::error::SCError;
 use crate::messages::{SSHMessage, SSHMessageResponse};
 use actix::{Actor, ActorFutureExt, Addr, Context, ResponseActFuture, WrapFuture};
 use async_trait::async_trait;
 use russh::client::Msg;
+use russh::Preferred;
 use russh::{client, Channel, ChannelId, ChannelStream, Pty};
 use russh_keys::*;
 use std::net::SocketAddr;
@@ -38,7 +40,17 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
                     "SSH Message Connect: host={}, port={}, username={}",
                     host, port, username
                 );
-                let config = russh::client::Config::default();
+
+                let preferred = Preferred {
+                    kex: KEX,
+                    ..Default::default()
+                };
+
+                let config = russh::client::Config {
+                    preferred,
+                    ..Default::default()
+                };
+
                 let config = Arc::new(config);
                 let client = SSHClient {
                     actor_addr: self.ws_addr.clone().unwrap(),
