@@ -27,8 +27,8 @@ pub enum SSHMessage {
 #[derive(Debug, Clone)]
 pub enum SSHMessageResponse {
     Connected,
-    PermissionDenied,
-    SSHError,
+    // PermissionDenied,
+    // SSHError,
     NoOp,
 }
 

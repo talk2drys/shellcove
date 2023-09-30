@@ -6,11 +6,10 @@ use actix::{Actor, ActorFutureExt, Addr, Context, ResponseActFuture, WrapFuture}
 use async_trait::async_trait;
 use russh::client::Msg;
 use russh::Preferred;
-use russh::{client, Channel, ChannelId, ChannelStream, Pty};
+use russh::{client, Channel, ChannelId};
 use russh_keys::*;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpSocket;
 use tracing::{debug, error, info};
 
@@ -76,7 +75,7 @@ impl actix::Handler<SSHMessage> for SSHActor {
                         info!("estasblish connection with jump host");
 
                         // authenticate into the proxy server
-                        let is_authenticated = session
+                        let _is_authenticated = session
                             .authenticate_password(proxy.username, proxy.password)
                             .await
                             .unwrap();
@@ -102,9 +101,9 @@ impl actix::Handler<SSHMessage> for SSHActor {
 
                     // Now authenticate to the target ssh
                     match session.authenticate_password(username, password).await {
-                        Err(err) => return Err(SCError::SSHError(err)),
-                        Ok(isAuthnenticated) => {
-                            if !isAuthnenticated {
+                        Err(err) => Err(SCError::SSHError(err)),
+                        Ok(is_authnenticated) => {
+                            if !is_authnenticated {
                                 error!("Permission Denied");
                                 return Err(SCError::PermissionDenied);
                             }
@@ -201,7 +200,7 @@ impl actix::Handler<SSHMessage> for SSHActor {
                     Box::pin(fut.into_actor(self).map(|res, _, _| res))
                 } else {
                     Box::pin(async move { Err(SCError::Error) }.into_actor(self).map(
-                        |res: Result<SSHMessageResponse, SCError>, _, _| {
+                        |_res: Result<SSHMessageResponse, SCError>, _, _| {
                             Ok(SSHMessageResponse::NoOp)
                         },
                     ))
@@ -223,7 +222,7 @@ impl actix::Handler<SSHMessage> for SSHActor {
                     Box::pin(fut.into_actor(self).map(|res, _, _| res))
                 } else {
                     Box::pin(async move { Err(SCError::Error) }.into_actor(self).map(
-                        |res: Result<SSHMessageResponse, SCError>, _, _| {
+                        |_res: Result<SSHMessageResponse, SCError>, _, _| {
                             Ok(SSHMessageResponse::NoOp)
                         },
                     ))
@@ -244,7 +243,7 @@ impl client::Handler for SSHClient {
 
     async fn check_server_key(
         self,
-        server_public_key: &key::PublicKey,
+        _server_public_key: &key::PublicKey,
     ) -> Result<(Self, bool), Self::Error> {
         // println!("check_server_key: {:?}", server_public_key);
         Ok((self, true))
@@ -252,7 +251,7 @@ impl client::Handler for SSHClient {
 
     async fn data(
         self,
-        channel: ChannelId,
+        _channel: ChannelId,
         data: &[u8],
         session: client::Session,
     ) -> Result<(Self, client::Session), Self::Error> {
@@ -276,7 +275,7 @@ impl client::Handler for SSHProxyClient {
 
     async fn check_server_key(
         self,
-        server_public_key: &key::PublicKey,
+        _server_public_key: &key::PublicKey,
     ) -> Result<(Self, bool), Self::Error> {
         // println!("check_server_key: {:?}", server_public_key);
         Ok((self, true))

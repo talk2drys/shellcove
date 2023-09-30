@@ -2,7 +2,7 @@ use super::ssh_actor::SSHActor;
 use crate::error::SCError;
 use crate::messages::{SSHMessage, SSHMessageResponse};
 use actix::ActorFutureExt;
-use actix::{Actor, AsyncContext, Handler, ResponseFuture, StreamHandler, WrapFuture};
+use actix::{Actor, AsyncContext, Handler, StreamHandler, WrapFuture};
 use actix_web_actors::ws;
 use bytestring::ByteString;
 use tracing::{debug, error, info};
@@ -121,7 +121,7 @@ impl Handler<SSHMessage> for WSActor {
             }
             SSHMessage::ShellOutput(data) => {
                 let v = data.clone();
-                let hh = String::from_utf8(v);
+                let _hh = String::from_utf8(v);
                 // dbg!(&hh);
                 let fut = async {
                     if let Ok(data) = ByteString::try_from(data) {
