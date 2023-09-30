@@ -5,6 +5,7 @@ pub enum SCError {
     ByteParseError,
     Config(config::ConfigError),
     Error,
+    MailBoxError,
 }
 
 impl From<config::ConfigError> for SCError {

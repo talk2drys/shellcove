@@ -9,7 +9,7 @@ use tracing::{debug, error, info};
 
 #[derive(Debug, Clone)]
 pub struct WSActor {
-    pub ssh_actor: Option<actix::Addr<SSHActor>>,
+    ssh_actor: Option<actix::Addr<SSHActor>>,
 }
 
 impl WSActor {
@@ -49,10 +49,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WSActor {
     }
 }
 
-impl<'data> Handler<SSHMessage> for WSActor {
+impl Handler<SSHMessage> for WSActor {
     type Result = actix::ResponseActFuture<Self, Result<SSHMessageResponse, SCError>>;
 
-    fn handle(&mut self, msg: SSHMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: SSHMessage, _ctx: &mut Self::Context) -> Self::Result {
         match msg {
             SSHMessage::Connect {
                 host,
@@ -62,34 +62,31 @@ impl<'data> Handler<SSHMessage> for WSActor {
                 jump_host,
             } => {
                 debug!("ssh connection request to {}:{}", host, port);
-                let cloned_addr = self.ssh_actor.clone();
-                let fut = async move {
-                    let addr = cloned_addr.unwrap();
-                    let res = addr
-                        .send(SSHMessage::Connect {
-                            host,
-                            port,
-                            username,
-                            password,
-                            jump_host,
-                        })
-                        .await
-                        .unwrap();
-                    // match res {
-                    //     Ok(resp) => {
-                    //         info!("forwarded ssh request to be handled by the ssh actor");
-                    //         resp
-                    //     }
-                    //     Err(err) => {
-                    //         error!("error forewarding ssh request to ssh_actor");
-                    //         err
-                    //     }
-                    // }
+                let actor_addr = self.ssh_actor.clone().unwrap();
+                let request = actor_addr.send(SSHMessage::Connect {
+                    host,
+                    port,
+                    username,
+                    password,
+                    jump_host,
+                });
 
-                    res
-                };
+                let actor_future =
+                    request
+                        .into_actor(self)
+                        .map(|result, _actor, _context| match result {
+                            Ok(resp) => {
+                                info!("forwarded ssh request to be handled by the ssh actor");
+                                resp
+                            }
+                            Err(_err) => {
+                                error!("error forewarding ssh request to ssh_actor");
+                                Err::<_, SCError>(SCError::MailBoxError)
+                            }
+                        });
 
-                Box::pin(fut.into_actor(self).map(|res, _, _| res))
+                // returned the wrapped future
+                Box::pin(actor_future)
             }
             SSHMessage::ShellInput(cmd) => {
                 let cloned_addr = self.ssh_actor.clone();

@@ -6,7 +6,6 @@ mod handler;
 mod messages;
 
 use crate::configuration::get_configuration;
-use crate::configuration::Setting;
 use actix_web::{App, HttpServer};
 use handler::{connection, health_check};
 use tracing::{error, info};
@@ -27,16 +26,14 @@ async fn main() -> std::io::Result<()> {
     info!("reading configuraion file");
     let config = get_configuration();
 
-    if config.is_err() {
+    if let Ok(setting) = config {
+        info!("starting web server");
+        HttpServer::new(|| App::new().service(connection).service(health_check))
+            .bind((setting.listen_addr, setting.listen_port))?
+            .run()
+            .await
+    } else {
         error!("error getting configuration");
         std::process::exit(10);
     }
-
-    let setting: Setting = config.unwrap(); // would not panic
-
-    info!("starting web server");
-    HttpServer::new(|| App::new().service(connection).service(health_check))
-        .bind((setting.listen_addr, setting.listen_port))?
-        .run()
-        .await
 }
