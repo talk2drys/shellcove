@@ -1,5 +1,5 @@
 use super::ws_actor::WSActor;
-use crate::constants::KEX;
+use crate::constants::{KEX, KEY};
 use crate::error::SCError;
 use crate::messages::{SSHMessage, SSHMessageResponse};
 use actix::{Actor, ActorFutureExt, Addr, Context, ResponseActFuture, WrapFuture};
@@ -24,7 +24,7 @@ impl Actor for SSHActor {
     type Context = Context<Self>;
 }
 
-impl<'data> actix::Handler<SSHMessage> for SSHActor {
+impl actix::Handler<SSHMessage> for SSHActor {
     type Result = ResponseActFuture<Self, Result<SSHMessageResponse, SCError>>;
 
     fn handle(&mut self, msg: SSHMessage, _ctx: &mut Self::Context) -> Self::Result {
@@ -43,6 +43,7 @@ impl<'data> actix::Handler<SSHMessage> for SSHActor {
 
                 let preferred = Preferred {
                     kex: KEX,
+                    key: KEY,
                     ..Default::default()
                 };
 
