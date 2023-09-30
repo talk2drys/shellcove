@@ -6,14 +6,18 @@ Shellcove is a Rust-based microservice designed to function as an SSH gateway be
 Terminal emulators and ssh servers. It enables shell terminals to communicate with the service 
 using WebSockets. The service then forwards the requests to an SSH server using the SSH protocol.
 
+![Architecture](docs/images/shellcove_background.png)
+
 ## Road Map
 
 - [ ] Record Terminal Session
 - [ ] Resumable Sessions
-- [ ] Acts as a bridge between WebSocket connections and SSH protocol.
+- [x] Acts as a bridge between browser websocket connections and SSH servers
 - [ ] Supports secure and encrypted communication.
-- [ ] Lightweight and designed for high performance.
 - [ ] Easy to deploy and integrate with existing systems.
+- [ ] container image provided
+- 
+<!-- - [ ] Lightweight and designed for high performance. -->
 
 ## Installation
 
