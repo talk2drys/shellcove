@@ -18,7 +18,8 @@ async fn main() -> std::io::Result<()> {
     LogTracer::init().expect("Failed to set logger");
 
     let format_layer = fmt::layer();
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug"));
+    let env_filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("shellcove=debug"));
     let subscriber = Registry::default().with(env_filter).with(format_layer);
 
     tracing::subscriber::set_global_default(subscriber).expect("error setting global subscriber");
